@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { loginUser, signUpUser } from "./api";
+import { loginUser, logoutUser, signUpUser } from "./api";
 
 const emptySignup = {
   userId: "",
@@ -16,11 +16,48 @@ const emptyLogin = {
 const getStoredUser = () => {
   try {
     const value = localStorage.getItem("pstream-user");
-    return value ? JSON.parse(value) : null;
+    const storedUser = value ? JSON.parse(value) : null;
+    return storedUser?.session_token || storedUser?.session_id != null ? storedUser : null;
   } catch {
     return null;
   }
 };
+
+function AuthenticatedWorkspace({ user, error, loading, onLogout }) {
+  return (
+    <div className="workspace-shell">
+      <aside className="side-navbar">
+        <div className="sidebar-identity">
+          <div className="workspace-brand">
+            <span className="brand-mark">P</span>
+            <span>P Streaming</span>
+          </div>
+
+          <div className="account-mini">
+              <span className="account-avatar">{user.username?.slice(0, 1).toUpperCase() || "U"}</span>
+              <div>
+                <span className="account-label">Signed in as</span>
+                <strong>{user.username || "User"}</strong>
+              </div>
+          </div>
+        </div>
+
+        <div className="sidebar-footer">
+          {error ? <p className="logout-error" role="alert">{error}</p> : null}
+          <button className="logout-button" type="button" onClick={onLogout} disabled={loading}>
+            {loading ? "Signing out..." : "Logout"}
+          </button>
+        </div>
+      </aside>
+
+      <main className="workspace-main">
+        <section className="success-stage">
+          <h1>Login<br /><em>Successful</em></h1>
+        </section>
+      </main>
+    </div>
+  );
+}
 
 function App() {
   const [mode, setMode] = useState("login");
@@ -30,6 +67,7 @@ function App() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [user, setUser] = useState(() => getStoredUser());
+  const [logoutLoading, setLogoutLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -88,10 +126,10 @@ function App() {
     setMessage("");
 
     try {
-      const data = await signUpUser(signupForm);
-      setUser(data);
+      await signUpUser(signupForm);
       setMessage("Account created successfully.");
       setSignupForm(emptySignup);
+      setMode("login");
     } catch (requestError) {
       setError(requestError.response?.data?.detail || "Signup failed. Please try again.");
     } finally {
@@ -121,22 +159,49 @@ function App() {
       };
 
       const data = await loginUser(payload);
-      setUser(data);
-      setMessage("Welcome back. Login successful.");
+      const sessionToken = data.session_token ?? data.session_id;
+      if (sessionToken == null) {
+        throw new Error("The server did not return a session identifier.");
+      }
+      setUser({ ...data, session_token: sessionToken });
       setLoginForm(emptyLogin);
     } catch (requestError) {
-      setError(requestError.response?.data?.detail || "Login failed. Please try again.");
+      setError(requestError.response?.data?.detail || requestError.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    setMessage("You have been signed out.");
+  const handleLogout = async () => {
+    if (user?.session_token == null && user?.session_id == null) {
+      return;
+    }
+
+    setLogoutLoading(true);
     setError("");
-    setMode("login");
+
+    try {
+      await logoutUser(user);
+      setUser(null);
+      setMessage("");
+      setMode("login");
+    } catch (requestError) {
+      setError(requestError.response?.data?.detail || "Logout failed. Please try again.");
+    } finally {
+      setLogoutLoading(false);
+    }
   };
+
+  if (user) {
+    return (
+      <AuthenticatedWorkspace
+        user={user}
+        error={error}
+        loading={logoutLoading}
+        onLogout={handleLogout}
+      />
+    );
+  }
 
   return (
     <div className="page-shell">
@@ -175,46 +240,31 @@ function App() {
           <div className="panel-top">
             <div>
               <p className="panel-kicker">Authentication</p>
-              <h2>{user ? "Session Active" : mode === "login" ? "Welcome back" : "Create account"}</h2>
+              <h2>{mode === "login" ? "Welcome back" : "Create account"}</h2>
             </div>
 
-            {!user && (
-              <div className="mode-switch" role="tablist" aria-label="Authentication mode">
-                <button
-                  className={mode === "login" ? "mode-pill active" : "mode-pill"}
-                  onClick={() => handleModeChange("login")}
-                  type="button"
-                >
-                  Login
-                </button>
-                <button
-                  className={mode === "signup" ? "mode-pill active" : "mode-pill"}
-                  onClick={() => handleModeChange("signup")}
-                  type="button"
-                >
-                  Sign Up
-                </button>
-              </div>
-            )}
+            <div className="mode-switch" role="tablist" aria-label="Authentication mode">
+              <button
+                className={mode === "login" ? "mode-pill active" : "mode-pill"}
+                onClick={() => handleModeChange("login")}
+                type="button"
+              >
+                Login
+              </button>
+              <button
+                className={mode === "signup" ? "mode-pill active" : "mode-pill"}
+                onClick={() => handleModeChange("signup")}
+                type="button"
+              >
+                Sign Up
+              </button>
+            </div>
           </div>
 
           {message ? <div className="status-banner success">{message}</div> : null}
           {error ? <div className="status-banner error">{error}</div> : null}
 
-          {user ? (
-            <div className="profile-card">
-              <div className="profile-badge">{user.username?.slice(0, 1).toUpperCase() || "U"}</div>
-              <div className="profile-copy">
-                <p className="profile-label">Logged in as</p>
-                <h3>{user.username}</h3>
-                <p>{user.email}</p>
-                <p>User ID: {user.userId}</p>
-              </div>
-              <button className="primary-button" type="button" onClick={handleLogout}>
-                Logout
-              </button>
-            </div>
-          ) : mode === "login" ? (
+          {mode === "login" ? (
             <form className="auth-form" onSubmit={handleLogin}>
               <label>
                 User ID or Email

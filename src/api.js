@@ -17,4 +17,12 @@ export const loginUser = async (payload) => {
   return data;
 };
 
+export const logoutUser = async (session) => {
+  const payload = session.session_id != null
+    ? { session_id: session.session_id }
+    : { session_token: session.session_token };
+  const { data } = await api.post("/logout", payload);
+  return data;
+};
+
 export default api;
