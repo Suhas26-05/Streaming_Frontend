@@ -11,7 +11,6 @@ import {
 } from "./api";
 
 const emptySignup = {
-  userId: "",
   username: "",
   email: "",
   password: ""
@@ -371,9 +370,6 @@ function AuthenticatedWorkspace({ user, error, loading, onLogout, onSelectProfil
                   <button className="profile-submit" type="submit" disabled={profileBusy}>
                     {profileBusy ? "Saving..." : editingProfile ? "Save changes" : "Create profile"}
                   </button>
-                  <button className="cancel-edit" type="button" onClick={closeProfileForm} disabled={profileBusy}>
-                    Cancel
-                  </button>
                 </form>
               </aside> : null}
             </section>
@@ -426,7 +422,7 @@ function App() {
   };
 
   const validateSignup = () => {
-    if (!signupForm.userId || !signupForm.username || !signupForm.email || !signupForm.password) {
+    if (!signupForm.username || !signupForm.email || !signupForm.password) {
       return "Fill in all signup fields.";
     }
     if (!/\S+@\S+\.\S+/.test(signupForm.email)) {
@@ -440,7 +436,7 @@ function App() {
 
   const validateLogin = () => {
     if (!loginForm.identifier || !loginForm.password) {
-      return "Enter your user ID or email and password.";
+      return "Enter your email and password.";
     }
     return "";
   };
@@ -489,7 +485,7 @@ function App() {
       const identifier = loginForm.identifier.trim();
       const payload = {
         password: loginForm.password,
-        ...(identifier.includes("@") ? { email: identifier } : { userId: identifier })
+        email: identifier
       };
 
       const data = await loginUser(payload);
@@ -633,10 +629,11 @@ function App() {
           {mode === "login" ? (
             <form className="auth-form" onSubmit={handleLogin}>
               <label>
-                User ID or Email
+                Email
                 <input
                   name="identifier"
-                  placeholder="Enter user ID or email"
+                  type="email"
+                  placeholder="Enter email address"
                   value={loginForm.identifier}
                   onChange={handleLoginChange}
                   autoComplete="username"
@@ -659,16 +656,6 @@ function App() {
             </form>
           ) : (
             <form className="auth-form" onSubmit={handleSignup}>
-              <label>
-                User ID
-                <input
-                  name="userId"
-                  placeholder="Create a unique user ID"
-                  value={signupForm.userId}
-                  onChange={handleSignupChange}
-                  autoComplete="username"
-                />
-              </label>
               <label>
                 Username
                 <input

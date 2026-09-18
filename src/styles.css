@@ -616,3 +616,89 @@ input:focus-visible {
 		margin-top: 2rem;
 	}
 }
+
+.profile-form-card {
+	position: fixed;
+	z-index: 5;
+	top: 50%;
+	left: 50%;
+	width: min(calc(100vw - 2rem), 24rem);
+	max-height: calc(100dvh - 2rem);
+	overflow-y: auto;
+	transform: translate(-50%, -50%);
+	border: 1px solid #526268;
+	background: #1b2529;
+	backdrop-filter: none;
+	box-shadow: 0 2rem 5rem rgba(0, 0, 0, .48);
+}
+
+.profile-choice-shell .profile-form-card {
+	background: #1b2529;
+}
+
+.profile-form-card input {
+	background: #253136;
+}
+
+@media (max-width: 960px) {
+	.side-navbar {
+		position: relative;
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.sidebar-footer {
+		position: static;
+		align-items: center;
+	}
+
+	.sidebar-footer .logout-button {
+		width: auto;
+	}
+}
+
+@media (min-width: 961px) and (max-height: 700px) {
+	.cinema-layout {
+		gap: 1rem 2.5rem;
+		padding-top: .8rem;
+		padding-bottom: .8rem;
+	}
+
+	.cinema-hero {
+		min-height: 0;
+		gap: 1.5rem;
+	}
+
+	.cinema-hero h1 {
+		font-size: clamp(3rem, 5vw, 4.8rem);
+	}
+
+	.spotlight-card {
+		min-height: 18rem;
+	}
+
+	.auth-panel {
+		padding: 1rem 1.25rem;
+	}
+
+	.auth-panel h2 {
+		font-size: 2rem;
+	}
+
+	.auth-form {
+		gap: .55rem;
+		margin-top: .85rem;
+	}
+
+	.auth-form input {
+		padding: .6rem .75rem;
+	}
+
+	.primary-button {
+		padding: .7rem 1rem;
+	}
+
+	.auth-note {
+		margin-top: .7rem;
+	}
+}
